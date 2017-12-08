@@ -1,0 +1,43 @@
+enable_gpio: false
+database: "buildwatcher.db"
+lights:
+  - name: "Failure"
+    gpio: 18
+    color: "red"
+    desc: "Red LED Light for build failures"
+  - name: "Rebuilding"
+    gpio: 24
+    color: "yellow"
+    desc: "yellow LED Light for failed build that are rebuilding"
+  - name: "Success"
+    gpio: 27
+    color: "green"
+    desc: "Green LED Light for Builds Are Succeeding"
+servers:
+  - name: Local Jenkins
+    type: jenkins
+    username: steve
+    password: none
+    url: "https://abs.harebrained-apps.com"
+    pollrate: 3
+    jobs: 
+      - name: "This is name"
+        jobname: shoppingcart-aspnetcore
+        branch: master
+      - name: "This is a test Job"
+        jobname: testjob
+        branch: master
+  - name: Distant Jenkins
+    type: jenkins
+    username: steve
+    password: none
+    url: "http://localhost:8080"
+    pollrate: 3
+    jobs: 
+      - name: "This is name"
+        jobname: shoppingcart-aspnetcore
+        branch: master
+      - name: "This is a test Job"
+        jobname: testjob
+        branch: master
+
