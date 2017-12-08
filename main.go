@@ -23,6 +23,9 @@ type Config struct {
 	Servers    []server.Server
 }
 
+// Version is the version of the app
+var Version string
+
 // AppConfig is the top level configuration for the entire app
 var AppConfig *Config
 
