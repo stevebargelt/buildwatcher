@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -24,16 +26,21 @@ type Travis struct {
 	serverConfig Server
 }
 
-func NewTravis(travisConfig Server) *Travis {
-	return &Travis{
-		serverConfig: travisConfig,
-	}
-}
+// func NewTravis(travisConfig Server) *Travis {
+// 	return &Travis{
+// 		serverConfig: travisConfig,
+// 	}
+// }
 
-// StartTravis starts the Travis CI Server Polling Loop
-func (t *Travis) StartTravis() {
-	t.stopCh = make(chan struct{})
-	log.Println("Starting Travis")
+// Start starts the Travis CI Server Polling Loop
+func (t *Travis) Start(ctx context.Context, travisConfig Server) {
+
+	log.Println(ctx, "Travis started")
+	defer log.Println("Travis: caller has told us to stop")
+
+	t.serverConfig = travisConfig
+	//t.stopCh = make(chan struct{})
+	//log.Println("Starting Travis")
 	travis := gotravis.NewClient(gotravis.TRAVIS_API_DEFAULT_URL, t.serverConfig.AccessToken)
 
 	log.Printf("travis.IsAuthenticated() = %v \n", travis.IsAuthenticated())
@@ -51,20 +58,33 @@ func (t *Travis) StartTravis() {
 	log.Printf("Found %d repos", len(repos))
 
 	ticker := time.NewTicker(time.Second * time.Duration(t.serverConfig.Pollrate))
-	go func() {
-		for _ = range ticker.C {
-			for _, travJob := range repos {
-				status := TRAVIS_STATUS[travJob.LastBuildState]
-				log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
-			}
-		}
-	}()
+	defer ticker.Stop()
 
 	select {
-	case <-t.stopCh:
-		log.Println("Stopping Travis polling")
+	case _ = <-ticker.C:
+		for _, travJob := range repos {
+			status := TRAVIS_STATUS[travJob.LastBuildState]
+			log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+		}
+	case <-ctx.Done():
+		fmt.Println("Travis Poller: caller has told us to stop")
 		return
 	}
+
+	// go func() {
+	// 	for _ = range ticker.C {
+	// 		for _, travJob := range repos {
+	// 			status := TRAVIS_STATUS[travJob.LastBuildState]
+	// 			log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+	// 		}
+	// 	}
+	// }()
+
+	// select {
+	// case <-t.stopCh:
+	// 	log.Println("Stopping Travis polling")
+	// 	return
+	// }
 
 }
 

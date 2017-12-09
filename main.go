@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
-	"syscall"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
 	"github.com/spf13/viper"
@@ -36,6 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer f.Close()
 	log.SetOutput(f)
 
@@ -68,31 +69,78 @@ func main() {
 		panic(fmt.Errorf("unable to decode into struct, %v", err))
 	}
 
-	// Initialize Jenkins
-	trav := server.NewTravis(AppConfig.Servers[1])
-	go trav.StartTravis()
-	log.Println("Starting Travis polling")
+	// create a context that we can cancel
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// Initialize Jenkins
-	jenk := server.NewJenkins(AppConfig.Servers[0])
-	go jenk.StartJenkins()
-	log.Println("Starting Jenkins polling")
+	// listen for C-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGUSR2)
-	for {
-		select {
-		case s := <-ch:
-			switch s {
-			case os.Interrupt:
-				jenk.Stop()
-				trav.Stop()
-				return
-				// case syscall.SIGUSR2:
-				// 	c.DumpTelemetry()
-			}
+	// defer func() {
+	// 	signal.Stop(c)
+	// 	cancel()
+	// }()
+
+	// go func() {
+	// 	select {
+	// 	case <-c:
+	// 		cancel()
+	// 	case <-ctx.Done():
+	// 		err := ctx.Err()
+	// 		log.Println(ctx, err.Error())
+	// 	}
+	// }()
+
+	//var lights []light.Light
+	var trav server.Travis
+	var jenk server.Jenkins
+
+	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
+	for _, serv := range AppConfig.Servers {
+		switch serv.Type {
+		case "travis":
+			go trav.Start(ctx, serv)
+			log.Printf("Starting Travis server %s.\n", serv.Name)
+		case "jenkins":
+			go jenk.Start(ctx, serv)
+			log.Printf("Starting Travis server %s.\n", serv.Name)
 		}
 	}
+
+	// // Initialize Travis
+	// go trav.Start(AppConfig.Servers[1])
+	// log.Println("Starting Travis polling")
+
+	// // Initialize Jenkins
+	// go jenk.Start(AppConfig.Servers[0])
+	// log.Println("Starting Jenkins polling")
+
+	// <-c
+	// fmt.Println("main: received C-c - shutting down")
+
+	// // tell the goroutines to stop
+	// fmt.Println("main: telling goroutines to stop")
+	// cancel()
+
+	// // and wait for them both to reply back
+	// wg.Wait()
+	// fmt.Println("main: all goroutines have told us they've finished")
+
+	// ch := make(chan os.Signal, 1)
+	// signal.Notify(ch, os.Interrupt, syscall.SIGUSR2)
+	for {
+		select {
+		case <-c:
+			cancel()
+			log.Println("case CTRL-C was detected... cancel called")
+		case <-ctx.Done():
+			err := ctx.Err()
+			log.Println("HERE:", ctx, err.Error())
+			return
+		}
+	}
+
 }
 
 // Red    "12" //GPIO18

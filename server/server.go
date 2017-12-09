@@ -1,5 +1,9 @@
 package server
 
+import (
+	"context"
+)
+
 type Job struct {
 	Name    string `json:"name"`
 	Jobname string `json:"jobname"`
@@ -63,4 +67,9 @@ var statuses = [...]string{
 
 func (s Status) String() string {
 	return statuses[s]
+}
+
+type server interface {
+	Start(context.Context, Server)
+	Stop()
 }
