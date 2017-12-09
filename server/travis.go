@@ -22,7 +22,6 @@ var TRAVIS_STATUS = map[string]Status{
 }
 
 type Travis struct {
-	stopCh       chan struct{}
 	serverConfig Server
 }
 

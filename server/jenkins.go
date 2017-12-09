@@ -27,7 +27,6 @@ var JENKINS_STATUS = map[string]Status{
 }
 
 type Jenkins struct {
-	stopCh       chan struct{}
 	serverConfig Server
 }
 
