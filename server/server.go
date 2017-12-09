@@ -71,5 +71,4 @@ func (s Status) String() string {
 
 type server interface {
 	Start(context.Context, Server)
-	Stop()
 }

@@ -26,12 +26,6 @@ type Travis struct {
 	serverConfig Server
 }
 
-// func NewTravis(travisConfig Server) *Travis {
-// 	return &Travis{
-// 		serverConfig: travisConfig,
-// 	}
-// }
-
 // Start starts the Travis CI Server Polling Loop
 func (t *Travis) Start(ctx context.Context, travisConfig Server) {
 
@@ -60,39 +54,16 @@ func (t *Travis) Start(ctx context.Context, travisConfig Server) {
 	ticker := time.NewTicker(time.Second * time.Duration(t.serverConfig.Pollrate))
 	defer ticker.Stop()
 
-	select {
-	case _ = <-ticker.C:
-		for _, travJob := range repos {
-			status := TRAVIS_STATUS[travJob.LastBuildState]
-			log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+	for {
+		select {
+		case _ = <-ticker.C:
+			for _, travJob := range repos {
+				status := TRAVIS_STATUS[travJob.LastBuildState]
+				log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+			}
+		case <-ctx.Done():
+			fmt.Println("Travis Poller: caller has told us to stop")
+			return
 		}
-	case <-ctx.Done():
-		fmt.Println("Travis Poller: caller has told us to stop")
-		return
 	}
-
-	// go func() {
-	// 	for _ = range ticker.C {
-	// 		for _, travJob := range repos {
-	// 			status := TRAVIS_STATUS[travJob.LastBuildState]
-	// 			log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
-	// 		}
-	// 	}
-	// }()
-
-	// select {
-	// case <-t.stopCh:
-	// 	log.Println("Stopping Travis polling")
-	// 	return
-	// }
-
-}
-
-func (t *Travis) Stop() {
-	if t.stopCh == nil {
-		log.Println("WARNING: stop channel is not initialized.")
-		return
-	}
-	t.stopCh <- struct{}{}
-	log.Println("Stopped Travis")
 }

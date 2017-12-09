@@ -77,21 +77,6 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	// defer func() {
-	// 	signal.Stop(c)
-	// 	cancel()
-	// }()
-
-	// go func() {
-	// 	select {
-	// 	case <-c:
-	// 		cancel()
-	// 	case <-ctx.Done():
-	// 		err := ctx.Err()
-	// 		log.Println(ctx, err.Error())
-	// 	}
-	// }()
-
 	//var lights []light.Light
 	var trav server.Travis
 	var jenk server.Jenkins
@@ -108,27 +93,6 @@ func main() {
 		}
 	}
 
-	// // Initialize Travis
-	// go trav.Start(AppConfig.Servers[1])
-	// log.Println("Starting Travis polling")
-
-	// // Initialize Jenkins
-	// go jenk.Start(AppConfig.Servers[0])
-	// log.Println("Starting Jenkins polling")
-
-	// <-c
-	// fmt.Println("main: received C-c - shutting down")
-
-	// // tell the goroutines to stop
-	// fmt.Println("main: telling goroutines to stop")
-	// cancel()
-
-	// // and wait for them both to reply back
-	// wg.Wait()
-	// fmt.Println("main: all goroutines have told us they've finished")
-
-	// ch := make(chan os.Signal, 1)
-	// signal.Notify(ch, os.Interrupt, syscall.SIGUSR2)
 	for {
 		select {
 		case <-c:

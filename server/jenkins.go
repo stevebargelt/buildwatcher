@@ -53,51 +53,20 @@ func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server) {
 		}
 		jenkinsJobs = append(jenkinsJobs, job)
 	}
-
-	//go j.StartPoller(ctx, JenkinsJobs)
-
 	ticker := time.NewTicker(time.Second * time.Duration(j.serverConfig.Pollrate))
 	defer ticker.Stop()
 
-	select {
-	case _ = <-ticker.C:
-		for _, jenkJob := range jenkinsJobs {
-			jenkJob.Poll()
-			status := JENKINS_STATUS[jenkJob.GetDetails().Color]
-			log.Printf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
+	for {
+		select {
+		case _ = <-ticker.C:
+			for _, jenkJob := range jenkinsJobs {
+				jenkJob.Poll()
+				status := JENKINS_STATUS[jenkJob.GetDetails().Color]
+				log.Printf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
+			}
+		case <-ctx.Done():
+			fmt.Println("Jenkins Poller: caller has told us to stop")
+			return
 		}
-	case <-ctx.Done():
-		fmt.Println("Jenkins Poller: caller has told us to stop")
-		return
 	}
-
 }
-
-func (j *Jenkins) Stop() {
-	if j.stopCh == nil {
-		log.Println("WARNING: stop channel is not initialized.")
-		return
-	}
-	j.stopCh <- struct{}{}
-	log.Println("Stopped Jenkins")
-}
-
-// func (j *Jenkins) StartPoller(ctx context.Context, jenkinsjobs []*gojenkins.Job) {
-
-// 	ticker := time.NewTicker(time.Second * time.Duration(j.serverConfig.Pollrate))
-// 	defer ticker.Stop()
-
-// 	for {
-// 		select {
-// 		case _ = <-ticker.C:
-// 			for _, jenkJob := range jenkinsjobs {
-// 				jenkJob.Poll()
-// 				status := JENKINS_STATUS[jenkJob.GetDetails().Color]
-// 				log.Printf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
-// 			}
-// 		case <-ctx.Done():
-// 			fmt.Println("Jenkins Poller: caller has told us to stop")
-// 			return
-// 		}
-// 	}
-// }
