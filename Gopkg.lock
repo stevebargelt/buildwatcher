@@ -2,9 +2,21 @@
 
 
 [[projects]]
+  name = "github.com/Ableton/go-travis"
+  packages = ["."]
+  revision = "41ff1837a29019385d3c5cb0ba58dfcba8e1eb24"
+  version = "2.0.0"
+
+[[projects]]
   name = "github.com/bndr/gojenkins"
   packages = ["."]
   revision = "668c6a1cb16b659ece2e90506e643ea16abc712c"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
   version = "v1.0"
 
 [[projects]]
@@ -18,6 +30,12 @@
   name = "github.com/golang/glog"
   packages = ["."]
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
@@ -42,6 +60,12 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "06020f85339e21b2478f756a78e295255ffa4d6a"
+
+[[projects]]
+  name = "github.com/oleiade/reflections"
+  packages = ["."]
+  revision = "2b6ec3da648e3e834dc41bad8d9ed7f2dc6a9496"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -100,6 +124,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1a23ba0b2e4e7bb6f3292b24bbaea16ca0b5351db3f3a3d80dc9002b38efc8c5"
+  inputs-digest = "771bf6538f94ab7ee5d8b297b63a007554c056b9267d3c51bed87c250cfe0c95"
   solver-name = "gps-cdcl"
   solver-version = 1

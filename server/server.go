@@ -7,16 +7,17 @@ type Job struct {
 }
 
 type Server struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	URL      string `json:"url"`
-	Pollrate int    `json:"pollrate"`
-	Jobs     []Job  `yaml:"jobs"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Username    string `json:"username"`
+	AccessToken string `json:"accesstoken"`
+	Password    string `json:"password"`
+	URL         string `json:"url"`
+	Pollrate    int    `json:"pollrate"`
+	Jobs        []Job  `yaml:"jobs"`
 }
 
-// Build Statuses
+// Status is the integer rep of the build status
 type Status int
 
 // Statuses

@@ -7,7 +7,7 @@ import (
 	"github.com/bndr/gojenkins"
 )
 
-var _STATUS = map[string]Status{
+var JENKINS_STATUS = map[string]Status{
 	"aborted":        ABORTED,
 	"aborted_anime":  BUILDING_FROM_ABORTED,
 	"blue":           SUCCESS,
@@ -53,13 +53,13 @@ func (j *Jenkins) StartJenkins() {
 		JenkinsJobs = append(JenkinsJobs, job)
 	}
 
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Second * time.Duration(j.serverConfig.Pollrate))
 	go func() {
 		for _ = range ticker.C {
 			for _, jenkJob := range JenkinsJobs {
 				jenkJob.Poll()
-				status := _STATUS[jenkJob.GetDetails().Color]
-				log.Printf("%s Status = %s", jenkJob.GetName(), status)
+				status := JENKINS_STATUS[jenkJob.GetDetails().Color]
+				log.Printf("Jeankis: %s Status = %s", jenkJob.GetName(), status)
 			}
 		}
 	}()

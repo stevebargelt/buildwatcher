@@ -40,4 +40,12 @@ servers:
       - name: "This is a test Job"
         jobname: testjob
         branch: master
-
+  - name: "Travis CI"
+    type: travis
+    username: stevebargelt
+    accesstoken: xyxbpegasdj5j34j
+    pollrate: 5
+    jobs:
+      - name: "Just a name"
+        jobname: stevebargelt/certbot-rpi
+        branch: master

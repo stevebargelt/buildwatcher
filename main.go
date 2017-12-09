@@ -69,6 +69,11 @@ func main() {
 	}
 
 	// Initialize Jenkins
+	trav := server.NewTravis(AppConfig.Servers[1])
+	go trav.StartTravis()
+	log.Println("Starting Travis polling")
+
+	// Initialize Jenkins
 	jenk := server.NewJenkins(AppConfig.Servers[0])
 	go jenk.StartJenkins()
 	log.Println("Starting Jenkins polling")
@@ -81,6 +86,7 @@ func main() {
 			switch s {
 			case os.Interrupt:
 				jenk.Stop()
+				trav.Stop()
 				return
 				// case syscall.SIGUSR2:
 				// 	c.DumpTelemetry()
