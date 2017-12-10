@@ -70,5 +70,5 @@ func (s Status) String() string {
 }
 
 type server interface {
-	Start(context.Context, Server, chan int)
+	Start(context.Context, Server, chan string)
 }

@@ -31,14 +31,12 @@ type Jenkins struct {
 }
 
 // StartJenkins starts the Jenkins CI Server Polling Loop
-func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server, ch chan int) {
+func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server, ch chan string) {
 
-	log.Println(ctx, "Jenkins started")
+	log.Println("Jenkins started")
 	defer log.Println("Jenkins: caller has told us to stop")
 
 	j.serverConfig = jenkinsConfig
-	//j.stopCh = make(chan struct{})
-	//log.Println("Starting Jenkins")
 	jenkins, err := gojenkins.CreateJenkins(j.serverConfig.URL, j.serverConfig.Username, j.serverConfig.Password).Init()
 	if err != nil {
 		log.Fatal("Unable to CreateJenkins. Err:", err)
@@ -58,14 +56,18 @@ func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server, ch chan int) 
 	for {
 		select {
 		case _ = <-ticker.C:
+			msg := "SUCCESS"
 			for _, jenkJob := range jenkinsJobs {
 				jenkJob.Poll()
 				status := JENKINS_STATUS[jenkJob.GetDetails().Color]
-				log.Printf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
-				ch <- 1
+				temp := fmt.Sprintf("%s", status)
+				if temp != "SUCCESS" {
+					msg = fmt.Sprintf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
+				}
 			}
+			ch <- fmt.Sprintf("Jenkins: %s", msg)
 		case <-ctx.Done():
-			fmt.Println("Jenkins Poller: caller has told us to stop")
+			log.Println("Jenkins Poller: caller has told us to stop")
 			return
 		}
 	}

@@ -15,7 +15,7 @@ pi-zero:
 .PHONY:deploy
 deploy:
 	scp bin/buildwatcher pi@192.168.1.42:buildwatcher
-	scp bin/config.yml pi@192.168.1.42:config.yml
+	#scp bin/config.yml pi@192.168.1.42:config.yml
 test:
 	go test -cover -v -race ./...
 

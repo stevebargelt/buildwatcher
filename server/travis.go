@@ -26,16 +26,13 @@ type Travis struct {
 }
 
 // Start starts the Travis CI Server Polling Loop
-func (t *Travis) Start(ctx context.Context, travisConfig Server, ch chan int) {
+func (t *Travis) Start(ctx context.Context, travisConfig Server, ch chan string) {
 
-	log.Println(ctx, "Travis started")
+	log.Println("Travis started")
 	defer log.Println("Travis: caller has told us to stop")
 
 	t.serverConfig = travisConfig
-	//t.stopCh = make(chan struct{})
-	//log.Println("Starting Travis")
 	travis := gotravis.NewClient(gotravis.TRAVIS_API_DEFAULT_URL, t.serverConfig.AccessToken)
-
 	log.Printf("travis.IsAuthenticated() = %v \n", travis.IsAuthenticated())
 
 	var repos []gotravis.Repository
@@ -48,21 +45,23 @@ func (t *Travis) Start(ctx context.Context, travisConfig Server, ch chan int) {
 		}
 		repos = append(repos, repo[0])
 	}
-	log.Printf("Found %d repos", len(repos))
 
 	ticker := time.NewTicker(time.Second * time.Duration(t.serverConfig.Pollrate))
 	defer ticker.Stop()
-
 	for {
 		select {
 		case _ = <-ticker.C:
+			msg := "SUCCESS"
 			for _, travJob := range repos {
 				status := TRAVIS_STATUS[travJob.LastBuildState]
-				log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
-				ch <- 2
+				temp := fmt.Sprintf("%s", status)
+				if temp != "SUCCESS" {
+					msg = fmt.Sprintf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+				}
 			}
+			ch <- fmt.Sprintf("Travis: %s", msg)
 		case <-ctx.Done():
-			fmt.Println("Travis Poller: caller has told us to stop")
+			log.Println("Travis Poller: caller has told us to stop")
 			return
 		}
 	}

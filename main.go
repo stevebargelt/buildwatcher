@@ -80,16 +80,17 @@ func main() {
 	var trav server.Travis
 	var jenk server.Jenkins
 
-	ch := make(chan int)
+	jenkCh := make(chan string)
+	travCh := make(chan string)
 
 	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
 	for _, serv := range AppConfig.Servers {
 		switch serv.Type {
 		case "travis":
-			go trav.Start(ctx, serv, ch)
+			go trav.Start(ctx, serv, travCh)
 			log.Printf("Starting Travis server %s.\n", serv.Name)
 		case "jenkins":
-			go jenk.Start(ctx, serv, ch)
+			go jenk.Start(ctx, serv, jenkCh)
 			log.Printf("Starting Travis server %s.\n", serv.Name)
 		}
 	}
@@ -102,11 +103,19 @@ func main() {
 
 	for {
 		select {
-		case <-ch:
-			log.Printf("Ch is: %d", <-ch)
-		case <-c:
-			cancel()
-			log.Println("case CTRL-C was detected... cancel called")
+		case <-jenkCh:
+			log.Println(<-jenkCh)
+		case <-travCh:
+			log.Println(<-travCh)
+		case s := <-c:
+			switch s {
+			case os.Interrupt:
+				cancel()
+				log.Println("CTRL-C was detected... cancel called")
+				return
+				// case syscall.SIGUSR2:
+				// 	c.DumpTelemetry()
+			}
 		case <-ctx.Done():
 			err := ctx.Err()
 			log.Println("HERE:", ctx, err.Error())
