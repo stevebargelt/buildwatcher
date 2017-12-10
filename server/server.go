@@ -1,9 +1,5 @@
 package server
 
-import (
-	"context"
-)
-
 type Job struct {
 	Name    string `json:"name"`
 	Jobname string `json:"jobname"`
@@ -17,7 +13,6 @@ type Server struct {
 	AccessToken string `json:"accesstoken"`
 	Password    string `json:"password"`
 	URL         string `json:"url"`
-	Pollrate    int    `json:"pollrate"`
 	Jobs        []Job  `yaml:"jobs"`
 }
 
@@ -69,6 +64,7 @@ func (s Status) String() string {
 	return statuses[s]
 }
 
-type server interface {
-	Start(context.Context, Server, chan string)
+type CiServer interface {
+	Start(Server)
+	Poll() string
 }

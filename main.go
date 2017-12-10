@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
 	"github.com/spf13/viper"
@@ -19,6 +20,7 @@ type Config struct {
 	EnableGPIO bool   `yaml:"enable_gpio"`
 	Database   string `yaml:"database"`
 	HighRelay  bool   `json:"highrelay"`
+	Pollrate   int    `json:"pollrate"`
 	Lights     []light.Light
 	Servers    []server.Server
 }
@@ -77,23 +79,26 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
+	var ciServers []server.CiServer
+
 	var trav server.Travis
 	var jenk server.Jenkins
-
-	jenkCh := make(chan string)
-	travCh := make(chan string)
 
 	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
 	for _, serv := range AppConfig.Servers {
 		switch serv.Type {
 		case "travis":
-			go trav.Start(ctx, serv, travCh)
+			trav.Start(serv)
+			ciServers = append(ciServers, &trav)
 			log.Printf("Starting Travis server %s.\n", serv.Name)
 		case "jenkins":
-			go jenk.Start(ctx, serv, jenkCh)
-			log.Printf("Starting Travis server %s.\n", serv.Name)
+			jenk.Start(serv)
+			ciServers = append(ciServers, &jenk)
+			log.Printf("Starting Jenkins server %s.\n", serv.Name)
 		}
 	}
+
+	log.Printf("Number if ciServers= %d", len(ciServers)
 
 	// var lights []light.Light
 
@@ -101,12 +106,17 @@ func main() {
 	// 	lights = append()
 	// }
 
+	// pulls this from server config
+	ticker := time.NewTicker(time.Second * time.Duration(5))
+	defer ticker.Stop()
+
 	for {
 		select {
-		case <-jenkCh:
-			log.Println(<-jenkCh)
-		case <-travCh:
-			log.Println(<-travCh)
+		case _ = <-ticker.C:
+			results := Poll(ciServers)
+			for k, v := range results {
+				log.Printf("Results [%d]: %s", k, v)
+			}
 		case s := <-c:
 			switch s {
 			case os.Interrupt:
@@ -123,6 +133,24 @@ func main() {
 		}
 	}
 
+}
+
+func Poll(ciservers []server.CiServer) (results []string) {
+	c := make(chan string)
+	go func() { c <- ciservers[0].Poll() }()
+	go func() { c <- ciservers[1].Poll() }()
+	// go func() { c <- First(query, Video1, Video2) }()
+	timeout := time.After(2000 * time.Millisecond)
+	for i := 0; i < 2; i++ { //wait for two results
+		select {
+		case result := <-c:
+			results = append(results, result)
+		case <-timeout:
+			log.Println("timed out")
+			return
+		}
+	}
+	return
 }
 
 // Red    "12" //GPIO18
