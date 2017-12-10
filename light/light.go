@@ -41,7 +41,7 @@ func (l *Light) On(id string) error {
 //LightOff : Turns a light off through GPIO
 func (l *Light) Off(id string) error {
 
-	log.Println("Setting GPIO Pin:", l.GPIO, "On")
+	log.Println("Setting GPIO Pin:", l.GPIO, "Off")
 	pin, err := embd.NewDigitalPin(l.GPIO)
 	if err != nil {
 		return err

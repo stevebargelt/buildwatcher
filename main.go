@@ -77,24 +77,33 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	//var lights []light.Light
 	var trav server.Travis
 	var jenk server.Jenkins
+
+	ch := make(chan int)
 
 	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
 	for _, serv := range AppConfig.Servers {
 		switch serv.Type {
 		case "travis":
-			go trav.Start(ctx, serv)
+			go trav.Start(ctx, serv, ch)
 			log.Printf("Starting Travis server %s.\n", serv.Name)
 		case "jenkins":
-			go jenk.Start(ctx, serv)
+			go jenk.Start(ctx, serv, ch)
 			log.Printf("Starting Travis server %s.\n", serv.Name)
 		}
 	}
 
+	// var lights []light.Light
+
+	// for _, l := range AppConfig.Lights {
+	// 	lights = append()
+	// }
+
 	for {
 		select {
+		case <-ch:
+			log.Printf("Ch is: %d", <-ch)
 		case <-c:
 			cancel()
 			log.Println("case CTRL-C was detected... cancel called")

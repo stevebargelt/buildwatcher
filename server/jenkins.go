@@ -31,7 +31,7 @@ type Jenkins struct {
 }
 
 // StartJenkins starts the Jenkins CI Server Polling Loop
-func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server) {
+func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server, ch chan int) {
 
 	log.Println(ctx, "Jenkins started")
 	defer log.Println("Jenkins: caller has told us to stop")
@@ -62,6 +62,7 @@ func (j *Jenkins) Start(ctx context.Context, jenkinsConfig Server) {
 				jenkJob.Poll()
 				status := JENKINS_STATUS[jenkJob.GetDetails().Color]
 				log.Printf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
+				ch <- 1
 			}
 		case <-ctx.Done():
 			fmt.Println("Jenkins Poller: caller has told us to stop")

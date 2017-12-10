@@ -26,7 +26,7 @@ type Travis struct {
 }
 
 // Start starts the Travis CI Server Polling Loop
-func (t *Travis) Start(ctx context.Context, travisConfig Server) {
+func (t *Travis) Start(ctx context.Context, travisConfig Server, ch chan int) {
 
 	log.Println(ctx, "Travis started")
 	defer log.Println("Travis: caller has told us to stop")
@@ -59,6 +59,7 @@ func (t *Travis) Start(ctx context.Context, travisConfig Server) {
 			for _, travJob := range repos {
 				status := TRAVIS_STATUS[travJob.LastBuildState]
 				log.Printf("Travis-Ci: %s Status = %s", travJob.Slug, status)
+				ch <- 2
 			}
 		case <-ctx.Done():
 			fmt.Println("Travis Poller: caller has told us to stop")
