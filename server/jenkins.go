@@ -33,8 +33,7 @@ type Jenkins struct {
 // StartJenkins starts the Jenkins CI Server Polling Loop
 func (j *Jenkins) Start(jenkinsConfig Server) {
 
-	log.Println("Jenkins started")
-	defer log.Println("Jenkins: caller has told us to stop")
+	log.Println("Jenkins start")
 
 	j.serverConfig = jenkinsConfig
 	jenkins, err := gojenkins.CreateJenkins(j.serverConfig.URL, j.serverConfig.Username, j.serverConfig.Password).Init()
@@ -52,16 +51,23 @@ func (j *Jenkins) Start(jenkinsConfig Server) {
 
 }
 
-func (j *Jenkins) Poll() string {
+// Poll polls the CI Server to get the latest job information
+func (j *Jenkins) Poll() ServerResult {
 
-	msg := "SUCCESS"
+	log.Printf("Polling Jenkins")
+	var s ServerResult
+	var b BuildResult
+	s.Result = "SUCCESS"
 	for _, jenkJob := range j.jobs {
 		jenkJob.Poll()
-		status := JENKINS_STATUS[jenkJob.GetDetails().Color]
-		temp := fmt.Sprintf("%s", status)
-		if temp != "SUCCESS" {
-			msg = fmt.Sprintf("Jenkins: %s Status = %s", jenkJob.GetName(), status)
+		jobResult := fmt.Sprintf("%s", JENKINS_STATUS[jenkJob.GetDetails().Color])
+		b.JobName = jenkJob.GetName()
+		b.Result = jobResult
+		if jobResult != "SUCCESS" {
+			s.Result = jobResult
 		}
+		s.BuildResults = append(s.BuildResults, b)
 	}
-	return msg
+
+	return s
 }

@@ -19,6 +19,18 @@ type Server struct {
 // Status is the integer rep of the build status
 type Status int
 
+// BuildResult holds the results of a particular build
+type BuildResult struct {
+	JobName string
+	Result  string
+}
+
+// ServerResult holds the results from a CI Server
+type ServerResult struct {
+	Result       string
+	BuildResults []BuildResult
+}
+
 // Statuses
 const (
 	UNKNOWN Status = iota
@@ -66,5 +78,5 @@ func (s Status) String() string {
 
 type CiServer interface {
 	Start(Server)
-	Poll() string
+	Poll() ServerResult
 }

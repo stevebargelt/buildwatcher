@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -71,10 +70,6 @@ func main() {
 		panic(fmt.Errorf("unable to decode into struct, %v", err))
 	}
 
-	// create a context that we can cancel
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	// listen for C-c
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -98,8 +93,6 @@ func main() {
 		}
 	}
 
-	log.Printf("Number if ciServers= %d", len(ciServers)
-
 	// var lights []light.Light
 
 	// for _, l := range AppConfig.Lights {
@@ -113,33 +106,30 @@ func main() {
 	for {
 		select {
 		case _ = <-ticker.C:
-			results := Poll(ciServers)
+			results := poll(ciServers)
 			for k, v := range results {
-				log.Printf("Results [%d]: %s", k, v)
+				log.Printf("Server Result [%d]: %s", k, v.Result)
+				for i, j := range v.BuildResults {
+					log.Printf("Build Results [%d]: %s, %s", i, j.JobName, j.Result)
+				}
 			}
 		case s := <-c:
 			switch s {
 			case os.Interrupt:
-				cancel()
 				log.Println("CTRL-C was detected... cancel called")
 				return
 				// case syscall.SIGUSR2:
 				// 	c.DumpTelemetry()
 			}
-		case <-ctx.Done():
-			err := ctx.Err()
-			log.Println("HERE:", ctx, err.Error())
-			return
 		}
 	}
 
 }
 
-func Poll(ciservers []server.CiServer) (results []string) {
-	c := make(chan string)
+func poll(ciservers []server.CiServer) (results []server.ServerResult) {
+	c := make(chan server.ServerResult)
 	go func() { c <- ciservers[0].Poll() }()
 	go func() { c <- ciservers[1].Poll() }()
-	// go func() { c <- First(query, Video1, Video2) }()
 	timeout := time.After(2000 * time.Millisecond)
 	for i := 0; i < 2; i++ { //wait for two results
 		select {
