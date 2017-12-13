@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
 	"github.com/spf13/viper"

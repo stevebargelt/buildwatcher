@@ -2,8 +2,7 @@ package server
 
 import (
 	"fmt"
-	"log"
-	//"time"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/bndr/gojenkins"
 )

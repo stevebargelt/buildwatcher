@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	gotravis "github.com/Ableton/go-travis"
 )

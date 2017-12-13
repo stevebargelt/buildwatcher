@@ -1,7 +1,7 @@
 package light
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/kidoman/embd"
 )
