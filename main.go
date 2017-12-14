@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	fsnotify "github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
@@ -30,6 +31,12 @@ var Version string
 
 // AppConfig is the top level configuration for the entire app
 var AppConfig *Config
+
+var (
+	ciServers []server.CiServer
+	trav      server.Travis
+	jenk      server.Jenkins
+)
 
 func main() {
 
@@ -63,36 +70,20 @@ func main() {
 		return
 	}
 
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	err = viper.ReadInConfig()
-	err = viper.Unmarshal(&AppConfig)
-	if err != nil {
-		panic(fmt.Errorf("unable to decode into struct, %v", err))
-	}
+	setConfig()
+
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		log.Println("Config file changed:", e.Name)
+		setConfig()
+		startServers()
+	})
 
 	// listen for C-c
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	var ciServers []server.CiServer
-
-	var trav server.Travis
-	var jenk server.Jenkins
-
-	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
-	for _, serv := range AppConfig.Servers {
-		switch serv.Type {
-		case "travis":
-			trav.Start(serv)
-			ciServers = append(ciServers, &trav)
-			log.Printf("Starting Travis server %s.\n", serv.Name)
-		case "jenkins":
-			jenk.Start(serv)
-			ciServers = append(ciServers, &jenk)
-			log.Printf("Starting Jenkins server %s.\n", serv.Name)
-		}
-	}
+	startServers()
 
 	// var lights []light.Light
 
@@ -100,8 +91,7 @@ func main() {
 	// 	lights = append()
 	// }
 
-	// pulls this from server config
-	ticker := time.NewTicker(time.Second * time.Duration(5))
+	ticker := time.NewTicker(time.Second * time.Duration(AppConfig.Pollrate))
 	defer ticker.Stop()
 
 	for {
@@ -127,6 +117,24 @@ func main() {
 
 }
 
+func startServers() {
+
+	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
+	ciServers = nil
+	for _, serv := range AppConfig.Servers {
+		switch serv.Type {
+		case "travis":
+			trav.Start(serv)
+			ciServers = append(ciServers, &trav)
+			log.Printf("Starting a Travis server %s.\n", serv.Name)
+		case "jenkins":
+			jenk.Start(serv)
+			ciServers = append(ciServers, &jenk)
+			log.Printf("Starting a Jenkins server %s.\n", serv.Name)
+		}
+	}
+}
+
 func poll(ciservers []server.CiServer) (results []server.ServerResult) {
 	c := make(chan server.ServerResult)
 	go func() { c <- ciservers[0].Poll() }()
@@ -142,6 +150,20 @@ func poll(ciservers []server.CiServer) (results []server.ServerResult) {
 		}
 	}
 	return
+}
+
+func setConfig() {
+
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("unable to read config, %v", err))
+	}
+	err = viper.Unmarshal(&AppConfig)
+	if err != nil {
+		panic(fmt.Errorf("unable to decode into struct, %v", err))
+	}
 }
 
 // Red    "12" //GPIO18
