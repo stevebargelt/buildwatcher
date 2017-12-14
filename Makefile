@@ -23,6 +23,13 @@ test:
 vet:
 	go vet ./...
 
+.PHONY: docker
+docker:
+    docker build -t buildwatcher -f Dockerfile .
+
+# docker run --name buildwatcher -it example-scratch
+
+
 # .PHONY: build
 # build: clean go-get test bin
 
