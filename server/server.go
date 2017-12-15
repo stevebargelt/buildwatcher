@@ -4,11 +4,13 @@ type Job struct {
 	Name    string `json:"name"`
 	Jobname string `json:"jobname"`
 	Branch  string `json:"branch"`
+	Result  string `json:"result"`
 }
 
 type Server struct {
 	Name        string `json:"name"`
 	Type        string `json:"type"`
+	Result      string `json:"result"`
 	Username    string `json:"username"`
 	AccessToken string `json:"accesstoken"`
 	Password    string `json:"password"`

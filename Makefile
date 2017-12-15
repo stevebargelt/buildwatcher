@@ -25,7 +25,7 @@ vet:
 
 .PHONY: docker
 docker:
-    docker build -t buildwatcher -f Dockerfile .
+	docker build -t buildwatcher -f Dockerfile .
 
 # docker run --name buildwatcher -it example-scratch
 

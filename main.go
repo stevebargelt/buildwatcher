@@ -100,6 +100,7 @@ func main() {
 			results := poll(ciServers)
 			for k, v := range results {
 				log.Printf("Server Result [%d]: %s", k, v.Result)
+				//log.Printf("Server Result [%d]: %s", k, ciServers[k].)
 				for i, j := range v.BuildResults {
 					log.Printf("Build Results [%d]: %s, %s", i, j.JobName, j.Result)
 				}

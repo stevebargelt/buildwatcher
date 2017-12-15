@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	gotravis "github.com/Ableton/go-travis"
@@ -20,9 +21,9 @@ var TRAVIS_STATUS = map[string]Status{
 }
 
 type Travis struct {
-	serverConfig Server
-	jobs         []gotravis.Repository
-	travis       *gotravis.Client
+	Server
+	jobs   []gotravis.Repository
+	travis *gotravis.Client
 }
 
 // Start starts the Travis CI Server Polling Loop
@@ -30,12 +31,12 @@ func (t *Travis) Start(travisConfig Server) {
 
 	log.Println("Travis start")
 
-	t.serverConfig = travisConfig
-	t.travis = gotravis.NewClient(gotravis.TRAVIS_API_DEFAULT_URL, t.serverConfig.AccessToken)
+	t.Server = travisConfig
+	t.travis = gotravis.NewClient(gotravis.TRAVIS_API_DEFAULT_URL, t.AccessToken)
 	log.Printf("travis.IsAuthenticated() = %v \n", t.travis.IsAuthenticated())
 
-	log.Printf("Adding %d jobs", len(t.serverConfig.Jobs))
-	for _, tj := range t.serverConfig.Jobs {
+	log.Printf("Adding %d jobs", len(t.Jobs))
+	for _, tj := range t.Jobs {
 		opt := &gotravis.RepositoryListOptions{Slug: tj.Jobname}
 		job, _, err := t.travis.Repositories.Find(opt)
 		t.travis.Repositories.Get(job[0].Id)
@@ -57,7 +58,7 @@ func (t *Travis) Poll() ServerResult {
 	var s ServerResult
 	var b BuildResult
 	s.Result = "SUCCESS"
-	for _, travJob := range t.jobs {
+	for i, travJob := range t.jobs {
 		job, _, err := t.travis.Repositories.Get(travJob.Id)
 		if err != nil {
 			log.Printf("Error in Repo Get %v", err)
@@ -68,10 +69,12 @@ func (t *Travis) Poll() ServerResult {
 		jobResult := fmt.Sprintf("%s", TRAVIS_STATUS[job.LastBuildState])
 		b.JobName = job.Slug
 		b.Result = jobResult
+		t.Jobs[i].Result = jobResult
 		if jobResult != "SUCCESS" {
 			s.Result = jobResult
 		}
 		s.BuildResults = append(s.BuildResults, b)
 	}
+	t.Result = s.Result
 	return s
 }

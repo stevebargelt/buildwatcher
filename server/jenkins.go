@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/bndr/gojenkins"
@@ -25,8 +26,8 @@ var JENKINS_STATUS = map[string]Status{
 }
 
 type Jenkins struct {
-	serverConfig Server
-	jobs         []*gojenkins.Job
+	Server
+	jobs []*gojenkins.Job
 }
 
 // StartJenkins starts the Jenkins CI Server Polling Loop
@@ -34,13 +35,13 @@ func (j *Jenkins) Start(jenkinsConfig Server) {
 
 	log.Println("Jenkins start")
 
-	j.serverConfig = jenkinsConfig
-	jenkins, err := gojenkins.CreateJenkins(j.serverConfig.URL, j.serverConfig.Username, j.serverConfig.Password).Init()
+	j.Server = jenkinsConfig
+	jenkins, err := gojenkins.CreateJenkins(j.URL, j.Username, j.Password).Init()
 	if err != nil {
 		log.Fatal("Unable to CreateJenkins. Err:", err)
 	}
 
-	for _, jb := range j.serverConfig.Jobs {
+	for _, jb := range j.Jobs {
 		job, err := jenkins.GetJob(jb.Jobname)
 		if err != nil {
 			log.Fatalf("Unable to GetJob(%s). Err:", jb.Jobname, err)
@@ -57,15 +58,17 @@ func (j *Jenkins) Poll() ServerResult {
 	var s ServerResult
 	var b BuildResult
 	s.Result = "SUCCESS"
-	for _, jenkJob := range j.jobs {
+	for i, jenkJob := range j.jobs {
 		jenkJob.Poll()
 		jobResult := fmt.Sprintf("%s", JENKINS_STATUS[jenkJob.GetDetails().Color])
 		b.JobName = jenkJob.GetName()
 		b.Result = jobResult
+		j.Jobs[i].Result = jobResult
 		if jobResult != "SUCCESS" {
 			s.Result = jobResult
 		}
 		s.BuildResults = append(s.BuildResults, b)
+		j.Result = s.Result
 	}
 
 	return s
