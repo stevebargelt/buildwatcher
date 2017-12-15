@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	fsnotify "github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
@@ -45,7 +44,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer f.Close()
 	log.SetOutput(f)
 
@@ -60,7 +58,7 @@ func main() {
       -config string
           Configuration file path
       -version
-			    Print version information
+		  Print version information
     `
 		fmt.Println(strings.TrimSpace(text))
 	}
@@ -71,60 +69,13 @@ func main() {
 	}
 
 	setConfig()
-
-	viper.WatchConfig()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		log.Println("Config file changed:", e.Name)
-		setConfig()
-		startServers()
-	})
-
-	// listen for C-c
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
 	startServers()
-
+	loop()
 	// var lights []light.Light
 
 	// for _, l := range AppConfig.Lights {
 	// 	lights = append()
 	// }
-
-	ticker := time.NewTicker(time.Second * time.Duration(AppConfig.Pollrate))
-	defer ticker.Stop()
-
-	for {
-		select {
-		case _ = <-ticker.C:
-			poll(ciServers)
-			for k, ciserver := range ciServers {
-				switch v := ciserver.(type) {
-				case *server.Jenkins:
-					log.Printf("Jenkins: %s", v.Name)
-				case *server.Travis:
-					log.Printf("Travis: %s", v.Name)
-				default:
-					log.Fatalf("FATAL: I don't know about type %T of ciservers!\n", v)
-				}
-				// if jenkinsCIserver, ok := ciserver.(*server.Jenkins); ok {
-				// 	log.Printf(jenkinsCIserver.Name)
-				// }
-				log.Printf("Server Result [%d]: %s", k, ciserver.Status())
-				for i, j := range ciserver.JobStatus() {
-					log.Printf("Build Results [%d]: %s", i, j)
-				}
-			}
-		case s := <-c:
-			switch s {
-			case os.Interrupt:
-				log.Println("CTRL-C was detected... cancel called")
-				return
-				// case syscall.SIGUSR2:
-				// 	c.DumpTelemetry()
-			}
-		}
-	}
 
 }
 
@@ -174,6 +125,51 @@ func setConfig() {
 	err = viper.Unmarshal(&AppConfig)
 	if err != nil {
 		panic(fmt.Errorf("unable to decode into struct, %v", err))
+	}
+	// viper.WatchConfig()
+	// viper.OnConfigChange(func(e fsnotify.Event) {
+	// 	log.Println("Config file changed:", e.Name)
+	// 	setConfig()
+	// 	startServers()
+	// })
+}
+
+func loop() {
+
+	// listen for CTRL-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	ticker := time.NewTicker(time.Second * time.Duration(AppConfig.Pollrate))
+	defer ticker.Stop()
+
+	for {
+		select {
+		case _ = <-ticker.C:
+			poll(ciServers)
+			for k, ciserver := range ciServers {
+				switch v := ciserver.(type) {
+				case *server.Jenkins:
+					log.Printf("Jenkins: %s", v.Name)
+				case *server.Travis:
+					log.Printf("Travis: %s", v.Name)
+				default:
+					log.Fatalf("FATAL: I don't know about type %T of ciservers!\n", v)
+				}
+				log.Printf("Server Result [%d]: %s", k, ciserver.Status())
+				for i, j := range ciserver.JobStatus() {
+					log.Printf("Build Results [%d]: %s", i, j)
+				}
+			}
+		case s := <-c:
+			switch s {
+			case os.Interrupt:
+				log.Println("CTRL-C was detected... cancel called")
+				return
+				// case syscall.SIGUSR2:
+				// 	c.DumpTelemetry()
+			}
+		}
 	}
 }
 
