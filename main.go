@@ -97,12 +97,22 @@ func main() {
 	for {
 		select {
 		case _ = <-ticker.C:
-			results := poll(ciServers)
-			for k, v := range results {
-				log.Printf("Server Result [%d]: %s", k, v.Result)
-				//log.Printf("Server Result [%d]: %s", k, ciServers[k].)
-				for i, j := range v.BuildResults {
-					log.Printf("Build Results [%d]: %s, %s", i, j.JobName, j.Result)
+			poll(ciServers)
+			for k, ciserver := range ciServers {
+				switch v := ciserver.(type) {
+				case *server.Jenkins:
+					log.Printf("Jenkins: %s", v.Name)
+				case *server.Travis:
+					log.Printf("Travis: %s", v.Name)
+				default:
+					log.Fatalf("FATAL: I don't know about type %T of ciservers!\n", v)
+				}
+				// if jenkinsCIserver, ok := ciserver.(*server.Jenkins); ok {
+				// 	log.Printf(jenkinsCIserver.Name)
+				// }
+				log.Printf("Server Result [%d]: %s", k, ciserver.Status())
+				for i, j := range ciserver.JobStatus() {
+					log.Printf("Build Results [%d]: %s", i, j)
 				}
 			}
 		case s := <-c:
@@ -136,15 +146,15 @@ func startServers() {
 	}
 }
 
-func poll(ciservers []server.CiServer) (results []server.ServerResult) {
-	c := make(chan server.ServerResult)
+func poll(ciservers []server.CiServer) {
+	c := make(chan bool)
 	go func() { c <- ciservers[0].Poll() }()
 	go func() { c <- ciservers[1].Poll() }()
 	timeout := time.After(2000 * time.Millisecond)
 	for i := 0; i < 2; i++ { //wait for two results
 		select {
-		case result := <-c:
-			results = append(results, result)
+		case _ = <-c:
+
 		case <-timeout:
 			log.Println("timed out")
 			return

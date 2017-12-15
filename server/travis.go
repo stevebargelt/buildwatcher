@@ -52,12 +52,10 @@ func (t *Travis) Start(travisConfig Server) {
 }
 
 // Poll polls the CI Server to get the latest job information
-func (t *Travis) Poll() ServerResult {
+func (t *Travis) Poll() bool {
 
 	log.Printf("Polling Travis")
-	var s ServerResult
-	var b BuildResult
-	s.Result = "SUCCESS"
+	t.Result = "SUCCESS"
 	for i, travJob := range t.jobs {
 		job, _, err := t.travis.Repositories.Get(travJob.Id)
 		if err != nil {
@@ -67,14 +65,26 @@ func (t *Travis) Poll() ServerResult {
 			log.Printf("Could not find Repo %v", travJob.Id)
 		}
 		jobResult := fmt.Sprintf("%s", TRAVIS_STATUS[job.LastBuildState])
-		b.JobName = job.Slug
-		b.Result = jobResult
 		t.Jobs[i].Result = jobResult
 		if jobResult != "SUCCESS" {
-			s.Result = jobResult
+			t.Result = jobResult
 		}
-		s.BuildResults = append(s.BuildResults, b)
+
 	}
-	t.Result = s.Result
-	return s
+
+	return true
+}
+
+// Status returns the Status of the entire server
+func (t *Travis) Status() string {
+	return t.Result
+}
+
+// JobStatus returns a string array of all the Job results form last Poll
+func (t *Travis) JobStatus() []string {
+	var jobResults []string
+	for _, job := range t.Jobs {
+		jobResults = append(jobResults, job.Result)
+	}
+	return jobResults
 }

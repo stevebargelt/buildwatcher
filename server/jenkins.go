@@ -52,24 +52,34 @@ func (j *Jenkins) Start(jenkinsConfig Server) {
 }
 
 // Poll polls the CI Server to get the latest job information
-func (j *Jenkins) Poll() ServerResult {
+func (j *Jenkins) Poll() bool {
 
 	log.Printf("Polling Jenkins")
-	var s ServerResult
-	var b BuildResult
-	s.Result = "SUCCESS"
+	// var s ServerResult
+	// var b BuildResult
+	j.Result = "SUCCESS"
 	for i, jenkJob := range j.jobs {
 		jenkJob.Poll()
 		jobResult := fmt.Sprintf("%s", JENKINS_STATUS[jenkJob.GetDetails().Color])
-		b.JobName = jenkJob.GetName()
-		b.Result = jobResult
 		j.Jobs[i].Result = jobResult
 		if jobResult != "SUCCESS" {
-			s.Result = jobResult
+			j.Result = jobResult
 		}
-		s.BuildResults = append(s.BuildResults, b)
-		j.Result = s.Result
 	}
 
-	return s
+	return true
+}
+
+// Status returns the Status of the entire server
+func (j *Jenkins) Status() string {
+	return j.Result
+}
+
+// JobStatus returns a string array of all the Job results form last Poll
+func (j *Jenkins) JobStatus() []string {
+	var jobResults []string
+	for _, job := range j.Jobs {
+		jobResults = append(jobResults, job.Result)
+	}
+	return jobResults
 }
