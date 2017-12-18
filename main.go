@@ -8,14 +8,17 @@ import (
 	"strings"
 	"time"
 
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
 	"github.com/spf13/viper"
+	"github.com/stevebargelt/buildwatcher/ciserver"
 	"github.com/stevebargelt/buildwatcher/light"
-	"github.com/stevebargelt/buildwatcher/server"
 )
 
+// Config is the configuration structure of the app
 type Config struct {
 	EnableGPIO bool   `yaml:"enable_gpio"`
 	Database   string `yaml:"database"`
@@ -69,8 +72,18 @@ func main() {
 	}
 
 	setConfig()
+	opts := configMQTT()
+	clientMQTT := MQTT.NewClient(opts)
+	if token := clientMQTT.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+
 	startServers()
-	loop()
+	loop(clientMQTT)
+	// go loop()
+	// http.HandleFunc("/", handler) // http://127.0.0.1:8080/Go
+	// http.ListenAndServe(":8080", nil)
+
 	// var lights []light.Light
 
 	// for _, l := range AppConfig.Lights {
@@ -81,7 +94,7 @@ func main() {
 
 func startServers() {
 
-	log.Printf("Starting up %v servers\n", len(AppConfig.Servers))
+	log.Printf("Attempting to start %v servers\n", len(AppConfig.Servers))
 	ciServers = nil
 	for _, serv := range AppConfig.Servers {
 		switch serv.Type {
@@ -134,7 +147,7 @@ func setConfig() {
 	// })
 }
 
-func loop() {
+func loop(MQTTClient MQTT.Client) {
 
 	// listen for CTRL-c
 	c := make(chan os.Signal, 1)
@@ -156,7 +169,10 @@ func loop() {
 				default:
 					log.Fatalf("FATAL: I don't know about type %T of ciservers!\n", v)
 				}
-				log.Printf("Server Result [%d]: %s", k, ciserver.Status())
+				msg := fmt.Sprintf("Server Result [%d]: %s", k, ciserver.Status())
+				log.Printf(msg)
+				token := MQTTClient.Publish("buildwatcher", byte(0), false, msg)
+				token.Wait()
 				for i, j := range ciserver.JobStatus() {
 					log.Printf("Build Results [%d]: %s", i, j)
 				}
@@ -177,3 +193,19 @@ func loop() {
 // Yellow "18" //GPIO24
 // Green  "13" //GPIO27
 // buzzer "16" //GPIO23
+
+func configMQTT() *MQTT.ClientOptions {
+
+	opts := MQTT.NewClientOptions()
+	opts.AddBroker("tcp://192.168.1.5:1883")
+	opts.SetClientID("buildwatcher")
+	// opts.SetUsername(*user)
+	// opts.SetPassword(*password)
+	//opts.SetCleanSession(*cleansess)
+	// if *store != ":memory:" {
+	// 	opts.SetStore(MQTT.NewFileStore(*store))
+	// }
+
+	return opts
+
+}
