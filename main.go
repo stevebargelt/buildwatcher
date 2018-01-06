@@ -142,8 +142,6 @@ func setConfig() {
 	// viper.WatchConfig()
 	// viper.OnConfigChange(func(e fsnotify.Event) {
 	// 	log.Println("Config file changed:", e.Name)
-	// 	setConfig()
-	// 	startServers()
 	// })
 }
 
