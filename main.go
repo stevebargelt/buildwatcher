@@ -167,12 +167,18 @@ func loop(MQTTClient MQTT.Client) {
 				default:
 					log.Fatalf("FATAL: I don't know about type %T of ciservers!\n", v)
 				}
+				serverTopic := fmt.Sprintf("buildwatcher/%s", AppConfig.Servers[k].Topic)
 				msg := fmt.Sprintf("Server Result [%d]: %s", k, ciserver.Status())
-				log.Printf(msg)
-				token := MQTTClient.Publish("buildwatcher", byte(0), false, msg)
+				log.Printf("Server Topic: %v", serverTopic)
+				log.Printf("Message: %v", msg)
+				token := MQTTClient.Publish(serverTopic, byte(0), false, msg)
 				token.Wait()
 				for i, j := range ciserver.JobStatus() {
-					log.Printf("Build Results [%d]: %s", i, j)
+					msg := fmt.Sprintf("Build Result [%d]: %s", i, j)
+					log.Printf(msg)
+					//jobTopic := fmt.Sprintf("/%s/%s", serverTopic, AppConfig.Servers[k].Jobs[i].Name)
+					// token := MQTTClient.Publish(jobTopic, byte(0), false, msg)
+					// token.Wait()
 				}
 			}
 		case s := <-c:

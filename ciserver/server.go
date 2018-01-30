@@ -9,6 +9,7 @@ type Job struct {
 
 type Server struct {
 	Name        string `json:"name"`
+	Topic       string `json:"topic"`
 	Type        string `json:"type"`
 	Result      string `json:"result"`
 	Username    string `json:"username"`
