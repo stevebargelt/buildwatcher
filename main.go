@@ -13,8 +13,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/kidoman/embd/host/rpi" // This loads the RPi driver
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/stevebargelt/buildwatcher/ciserver"
+	"github.com/stevebargelt/buildwatcher/cmd"
 	"github.com/stevebargelt/buildwatcher/light"
 )
 
@@ -41,6 +43,8 @@ var (
 )
 
 func main() {
+
+	cmd.Execute()
 
 	//create your file with desired read/write permissions
 	f, err := os.OpenFile("buildwatcher.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
